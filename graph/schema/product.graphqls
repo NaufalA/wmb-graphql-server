@@ -1,0 +1,57 @@
+type Product {
+  id: ID!
+  productName: String
+  price: Float
+  stock: Float
+  stockUnit: String
+  createTime: Time
+  updateTime: Time
+}
+
+input ProductConnectionArgs {
+  # pagination
+  first: Int
+  last: Int
+  before: String
+  after: String
+  # filters
+  email: String
+  fullName: String
+  role: String
+}
+
+type ProductEdge {
+  cursor: ID!
+  node: Product
+}
+
+type ProductConnection {
+  edges: [ProductEdge]!
+  pageInfo: PageInfo!
+}
+
+extend type Query {
+  getProduct(id: ID!): Product
+  listProducts(input: ProductConnectionArgs!): ProductConnection!
+}
+
+input CreateProductInput {
+  productName: String!
+  price: Float!
+  stock: Float!
+  stockUnit: String!
+}
+
+input UpdateProductInput {
+  id: ID!
+  productName: String
+  price: Float
+  stock: Float
+  stockUnit: String
+}
+
+extend type Mutation {
+  createProduct(input: CreateProductInput!): Product
+  updateProduct(input: UpdateProductInput!): Product
+  deleteProduct(id: ID!): ID
+}

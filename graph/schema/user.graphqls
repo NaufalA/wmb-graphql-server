@@ -1,0 +1,54 @@
+type User {
+  id: ID!
+  email: String
+  fullName: String
+  role: String
+  createTime: Time
+  updateTime: Time
+}
+
+input UserConnectionArgs {
+  # pagination
+  first: Int
+  last: Int
+  before: String
+  after: String
+  # filters
+  email: String
+  fullName: String
+  role: String
+}
+
+type UserEdge {
+  cursor: ID!
+  node: User
+}
+
+type UserConnection {
+  edges: [UserEdge]!
+  pageInfo: PageInfo!
+}
+
+extend type Query {
+  getUser(id: ID!): User
+  listUsers(input: UserConnectionArgs!): UserConnection!
+}
+
+input CreateUserInput {
+  email: String!
+  fullName: String!
+  password: String!
+}
+
+input UpdateUserInput {
+  id: ID!
+  email: String
+  fullName: String
+  role: String
+}
+
+extend type Mutation {
+  createUser(input: CreateUserInput!): User
+  updateUser(input: UpdateUserInput!): User
+  deleteUser(id: ID!): ID
+}
