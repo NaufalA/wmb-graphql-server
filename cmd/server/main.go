@@ -15,6 +15,7 @@ import (
 	"github.com/NaufalA/wmb-graphql-server/graph"
 	"github.com/NaufalA/wmb-graphql-server/graph/resolver"
 	"github.com/NaufalA/wmb-graphql-server/internal/database"
+	"github.com/NaufalA/wmb-graphql-server/internal/repository"
 	"github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -22,22 +23,25 @@ import (
 const defaultPort = "8080"
 
 func main() {
+	logger := logrus.New()
+
 	mongoConfig := config.MongoDBConfig{
 		Host:     "localhost",
 		Port:     ":27017",
 		Username: "root",
 		Password: "D1fficultPAssw0rd",
+		Database: "wmb",
 	}
 	mongoClient, err := database.ConnectMongo(mongoConfig)
 	if err != nil {
-		logrus.Panic(err)
+		logger.Panic(err)
 	}
-	logrus.Info(fmt.Sprintf("Successfully Connected to MongoDB Server %s", mongoConfig.Host))
+	logger.Info(fmt.Sprintf("Successfully Connected to MongoDB Server %s", mongoConfig.Host))
 
 	defer func() {
 		err := mongoClient.Disconnect(context.Background())
 		if err != nil {
-			logrus.Panic(err)
+			logger.Panic(err)
 		}
 	}()
 	port := os.Getenv("PORT")
@@ -45,8 +49,10 @@ func main() {
 		port = defaultPort
 	}
 
+	productRepository := repository.NewProductRepository(logger, mongoClient.Database(mongoConfig.Database))
+
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{
-		Resolvers:	&resolver.Resolver{},
+		Resolvers: resolver.NewResolver(productRepository),
 	}))
 
 	srv.AddTransport(transport.Options{})
@@ -63,6 +69,6 @@ func main() {
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
 
-	logrus.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	logrus.Fatal(http.ListenAndServe(":"+port, nil))
+	logger.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+	logger.Fatal(http.ListenAndServe(":"+port, nil))
 }

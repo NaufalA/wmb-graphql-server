@@ -6,7 +6,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/NaufalA/wmb-graphql-server/graph"
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
@@ -14,27 +13,27 @@ import (
 
 // CreateProduct is the resolver for the createProduct field.
 func (r *mutationResolver) CreateProduct(ctx context.Context, input model.CreateProductInput) (*model.Product, error) {
-	panic(fmt.Errorf("not implemented: CreateProduct - createProduct"))
+	return r.productRepository.CreateProduct(ctx, input)
 }
 
 // UpdateProduct is the resolver for the updateProduct field.
 func (r *mutationResolver) UpdateProduct(ctx context.Context, input model.UpdateProductInput) (*model.Product, error) {
-	panic(fmt.Errorf("not implemented: UpdateProduct - updateProduct"))
+	return r.productRepository.UpdateProduct(ctx, input)
 }
 
 // DeleteProduct is the resolver for the deleteProduct field.
 func (r *mutationResolver) DeleteProduct(ctx context.Context, id string) (*string, error) {
-	panic(fmt.Errorf("not implemented: DeleteProduct - deleteProduct"))
+	return r.productRepository.DeleteProduct(ctx, id)
 }
 
 // GetProduct is the resolver for the getProduct field.
 func (r *queryResolver) GetProduct(ctx context.Context, id string) (*model.Product, error) {
-	panic(fmt.Errorf("not implemented: GetProduct - getProduct"))
+	return r.productRepository.GetProduct(ctx, id)
 }
 
 // ListProducts is the resolver for the listProducts field.
 func (r *queryResolver) ListProducts(ctx context.Context, input model.ProductConnectionArgs) (*model.ProductConnection, error) {
-	panic(fmt.Errorf("not implemented: ListProducts - listProducts"))
+	return r.productRepository.ListProducts(ctx, input)
 }
 
 // Mutation returns graph.MutationResolver implementation.
