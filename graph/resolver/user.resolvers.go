@@ -6,32 +6,31 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
+	return r.userRepository.CreateUser(ctx, input)
 }
 
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUserInput) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: UpdateUser - updateUser"))
+	return r.userRepository.UpdateUser(ctx, input)
 }
 
 // DeleteUser is the resolver for the deleteUser field.
 func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (*string, error) {
-	panic(fmt.Errorf("not implemented: DeleteUser - deleteUser"))
+	return r.userRepository.DeleteUser(ctx, id)
 }
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: GetUser - getUser"))
+	return r.userRepository.GetUser(ctx, id)
 }
 
 // ListUsers is the resolver for the listUsers field.
 func (r *queryResolver) ListUsers(ctx context.Context, input model.UserConnectionArgs) (*model.UserConnection, error) {
-	panic(fmt.Errorf("not implemented: ListUsers - listUsers"))
+	return r.userRepository.ListUsers(ctx, input)
 }

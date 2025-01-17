@@ -1,0 +1,118 @@
+# mutation {
+  # createProduct(input: {
+  #   productName: "nasi goreng ",
+  #   price: 22000,
+  #   stock: 20,
+  #   stockUnit: "serving"
+  # }) {
+  #   id,
+  #   productName,
+  #   createTime,
+  # }
+  # updateProduct(input: {
+  #   id: "6789fa953ccee3c22fed29c8",
+  #   productName: "nasi goreng aja",
+  #   price: 12000,
+  #   stock: 11,
+  #   stockUnit: "serving"
+  # }) {
+  #   id,
+  #   productName,
+  #   price,
+  #   stock,
+  #   stockUnit,
+  #   createTime,
+  #   updateTime
+  # }
+  # deleteProduct(id: "6789fa5563077f17be45d8a4")
+# }
+
+query {
+  # getProduct(id: "6789b708c1dc6db10ef7cdce") {
+  #   id,
+  #   productName,
+  #   price,
+  # }
+  
+  listProducts(input: {
+    first: 10,
+    # after: "MjAyNS0wMS0xN1QwMjoyNTo1N1o="
+  }) {
+    edges {
+      cursor,
+      node {
+        id,
+        productName,
+        price,
+        createTime,
+        updateTime
+      }
+    }
+    pageInfo {
+      endCursor,
+      hasNextPage,
+      hasPrevPage
+    }
+  }
+}
+
+# mutation {
+#   createUser(input: {
+#     fullName: "Naufal A",
+#     email: "naufala@mail.com",
+#     password: "verisekurpaswod",
+#   }) {
+#     id,
+#     email,
+#     fullName,
+#     role,
+#     createTime,
+#   }
+#   # updateUser(input: {
+#   #   id: "678a25e447844097b6e58abe",
+#   #   fullName: "Naufal A",
+#   #   email: "naufalaulia@mail.com",
+#   #   role: "Admin"
+#   # }) {
+#   #   id,
+#   #   email,
+#   #   fullName,
+#   #   role,
+#   #   createTime,
+#   #   updateTime
+#   # }
+#   # deleteUser(id: "678a25e447844097b6e58abe")
+# }
+
+# query {
+#   # getUser(id: "678a25e447844097b6e58abe") {
+#   #   id,
+#   #   email,
+#   #   fullName,
+#   #   role,
+#   #   createTime,
+#   #   updateTime
+#   # }
+  
+#   # listUsers(input: {
+#   #   first: 10,
+#   #   # after: "MjAyNS0wMS0xN1QwMjoyNTo1N1o="
+#   # }) {
+#   #   edges {
+#   #     cursor,
+#   #     node {
+#   #       id,
+#   #       email,
+#   #       fullName,
+#   #       role,
+#   #       createTime,
+#   #       updateTime
+#   #     }
+#   #   }
+#   #   pageInfo {
+#   #     endCursor,
+#   #     hasNextPage,
+#   #     hasPrevPage
+#   #   }
+#   # }
+# }

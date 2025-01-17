@@ -50,9 +50,13 @@ func main() {
 	}
 
 	productRepository := repository.NewProductRepository(logger, mongoClient.Database(mongoConfig.Database))
+	userRepository := repository.NewUserRepository(logger, mongoClient.Database(mongoConfig.Database))
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{
-		Resolvers: resolver.NewResolver(productRepository),
+		Resolvers: resolver.NewResolver(
+			productRepository,
+			userRepository,
+		),
 	}))
 
 	srv.AddTransport(transport.Options{})

@@ -18,14 +18,25 @@ type ProductRepository interface {
 	ListProducts(ctx context.Context, input model.ProductConnectionArgs) (*model.ProductConnection, error)
 }
 
+type UserRepository interface {
+	CreateUser(ctx context.Context, input model.CreateUserInput) (*model.User, error)
+	UpdateUser(ctx context.Context, input model.UpdateUserInput) (*model.User, error)
+	DeleteUser(ctx context.Context, id string) (*string, error)
+	GetUser(ctx context.Context, id string) (*model.User, error)
+	ListUsers(ctx context.Context, input model.UserConnectionArgs) (*model.UserConnection, error)
+}
+
 type Resolver struct {
 	productRepository ProductRepository
+	userRepository UserRepository
 }
 
 func NewResolver(
 	productRepository ProductRepository,
+	userRepository UserRepository,
 ) *Resolver {
 	return &Resolver{
 		productRepository: productRepository,
+		userRepository: userRepository,
 	}
 }
