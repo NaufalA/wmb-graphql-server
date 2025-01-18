@@ -8,16 +8,52 @@ import (
 	"context"
 
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
+	"github.com/NaufalA/wmb-graphql-server/internal/collection"
+	"github.com/NaufalA/wmb-graphql-server/internal/dto"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.User, error) {
-	return r.userRepository.CreateUser(ctx, input)
+	result, err := r.userRepository.CreateUser(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return &model.User{
+		ID:         result.ID.Hex(),
+		Email:      result.Email,
+		FullName:   result.FullName,
+		Role:       result.Role,
+		CreateTime: result.CreateTime,
+		UpdateTime: result.UpdateTime,
+	}, nil
 }
 
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUserInput) (*model.User, error) {
-	return r.userRepository.UpdateUser(ctx, input)
+	id, err := primitive.ObjectIDFromHex(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	
+	request := collection.User{
+		ID: id,
+		Email: input.Email,
+		FullName: input.FullName,
+		Role: input.Role,
+	}
+	result, err := r.userRepository.UpdateUser(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return &model.User{
+		ID:         result.ID.Hex(),
+		Email:      result.Email,
+		FullName:   result.FullName,
+		Role:       result.Role,
+		CreateTime: result.CreateTime,
+		UpdateTime: result.UpdateTime,
+	}, nil
 }
 
 // DeleteUser is the resolver for the deleteUser field.
@@ -27,7 +63,18 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (*string, 
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
-	return r.userRepository.GetUser(ctx, id)
+	result, err := r.userRepository.GetUser(ctx, dto.GetUserRequest{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	return &model.User{
+		ID:         result.ID.Hex(),
+		Email:      result.Email,
+		FullName:   result.FullName,
+		Role:       result.Role,
+		CreateTime: result.CreateTime,
+		UpdateTime: result.UpdateTime,
+	}, nil
 }
 
 // ListUsers is the resolver for the listUsers field.

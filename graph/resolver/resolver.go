@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
+	"github.com/NaufalA/wmb-graphql-server/internal/collection"
+	"github.com/NaufalA/wmb-graphql-server/internal/dto"
 )
 
 // This file will not be regenerated automatically.
@@ -19,10 +21,10 @@ type ProductRepository interface {
 }
 
 type UserRepository interface {
-	CreateUser(ctx context.Context, input model.CreateUserInput) (*model.User, error)
-	UpdateUser(ctx context.Context, input model.UpdateUserInput) (*model.User, error)
+	CreateUser(ctx context.Context, input model.CreateUserInput) (*collection.User, error)
+	UpdateUser(ctx context.Context, input collection.User) (*collection.User, error)
 	DeleteUser(ctx context.Context, id string) (*string, error)
-	GetUser(ctx context.Context, id string) (*model.User, error)
+	GetUser(ctx context.Context, request dto.GetUserRequest) (*collection.User, error)
 	ListUsers(ctx context.Context, input model.UserConnectionArgs) (*model.UserConnection, error)
 }
 

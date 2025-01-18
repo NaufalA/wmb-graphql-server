@@ -7,6 +7,7 @@ import (
 
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
 	"github.com/NaufalA/wmb-graphql-server/internal/collection"
+	"github.com/NaufalA/wmb-graphql-server/internal/dto"
 	"github.com/NaufalA/wmb-graphql-server/pkg/util"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -32,20 +33,22 @@ func NewUserRepository(
 	}
 }
 
-func (r *UserRepository) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.User, error) {
+func (r *UserRepository) CreateUser(ctx context.Context, input model.CreateUserInput) (*collection.User, error) {
 	id := primitive.ObjectID(bson.NewObjectID())
 	now := time.Now()
-	passwordHash, err := util.HashPassword(input.Password)
+	passwordUtil := util.PasswordUtil{}
+	passwordHash, err := passwordUtil.HashPassword(input.Password)
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
 	}
+	role := "Guest"
 	col := collection.User{
 		ID:           id,
-		Email:        input.Email,
-		FullName:     input.FullName,
-		Role:         "Guest",
-		PasswordHash: passwordHash,
+		Email:        &input.Email,
+		FullName:     &input.FullName,
+		Role:         &role,
+		PasswordHash: &passwordHash,
 		CreateTime:   &now,
 	}
 	_, err = r.db.Collection(col.CollectionName()).InsertOne(ctx, col)
@@ -54,41 +57,35 @@ func (r *UserRepository) CreateUser(ctx context.Context, input model.CreateUserI
 		return nil, err
 	}
 
-	model := &model.User{
-		ID:         col.ID.Hex(),
-		Email:      &col.Email,
-		FullName:   &col.FullName,
-		Role:       &col.Role,
-		CreateTime: &now,
-	}
-
-	return model, nil
+	return &col, nil
 }
 
-func (r *UserRepository) UpdateUser(ctx context.Context, input model.UpdateUserInput) (*model.User, error) {
-	id, err := primitive.ObjectIDFromHex(input.ID)
-	if err != nil {
-		logrus.Error(err)
-		return nil, err
-	}
-	user := collection.User{
-		ID: id,
-	}
-	filter := bson.M{"_id": user.ID}
-	err = r.db.Collection(user.CollectionName()).FindOne(ctx, filter).Decode(&user)
+func (r *UserRepository) UpdateUser(ctx context.Context, input collection.User) (*collection.User, error) {
+	user := collection.User{}
+	filter := bson.M{"_id": input.ID}
+	err := r.db.Collection(user.CollectionName()).FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
 	}
 	now := time.Now()
 	if input.Email != nil {
-		user.Email = *input.Email
+		user.Email = input.Email
 	}
 	if input.FullName != nil {
-		user.FullName = *input.FullName
+		user.FullName = input.FullName
 	}
 	if input.Role != nil {
-		user.Role = *input.Role
+		user.Role = input.Role
+	}
+	if input.Password != nil {
+		passwordUtil := util.PasswordUtil{}
+		passwordHash, err := passwordUtil.HashPassword(*input.Password)
+		if err != nil {
+			logrus.Error(err)
+			return nil, err
+		}
+		user.PasswordHash = &passwordHash
 	}
 	user.UpdateTime = &now
 	update := bson.M{"$set": user}
@@ -104,16 +101,7 @@ func (r *UserRepository) UpdateUser(ctx context.Context, input model.UpdateUserI
 		return nil, err
 	}
 
-	model := &model.User{
-		ID:         input.ID,
-		Email:      &user.Email,
-		FullName:   &user.FullName,
-		Role:       &user.Role,
-		CreateTime: user.CreateTime,
-		UpdateTime: &now,
-	}
-
-	return model, nil
+	return &user, nil
 }
 
 func (r *UserRepository) DeleteUser(ctx context.Context, id string) (*string, error) {
@@ -140,30 +128,27 @@ func (r *UserRepository) DeleteUser(ctx context.Context, id string) (*string, er
 	return nil, nil
 }
 
-func (r *UserRepository) GetUser(ctx context.Context, id string) (*model.User, error) {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		logrus.Error(err)
-		return nil, err
+func (r *UserRepository) GetUser(ctx context.Context, request dto.GetUserRequest) (*collection.User, error) {
+	filter := bson.M{}
+	if request.ID != "" {
+		objectID, err := primitive.ObjectIDFromHex(request.ID)
+		if err != nil {
+			logrus.Error(err)
+			return nil, err
+		}
+		filter["_id"] = objectID
 	}
-	col := collection.User{
-		ID: objectID,
+	if request.Email != "" {
+		filter["email"] = request.Email
 	}
-	filter := bson.M{"_id": col.ID}
-	err = r.db.Collection(col.CollectionName()).FindOne(ctx, filter).Decode(&col)
+	col := collection.User{}
+	err := r.db.Collection(col.CollectionName()).FindOne(ctx, filter).Decode(&col)
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
 	}
 
-	return &model.User{
-		ID:         col.ID.Hex(),
-		Email:      &col.Email,
-		FullName:   &col.FullName,
-		Role:       &col.Role,
-		CreateTime: col.CreateTime,
-		UpdateTime: col.UpdateTime,
-	}, nil
+	return &col, nil
 }
 
 func (r *UserRepository) ListUsers(ctx context.Context, input model.UserConnectionArgs) (*model.UserConnection, error) {
@@ -226,9 +211,9 @@ func (r *UserRepository) ListUsers(ctx context.Context, input model.UserConnecti
 			Cursor: paginationUtil.EncodeCursor(p.CreateTime.Format(time.RFC3339)),
 			Node: &model.User{
 				ID:         p.ID.Hex(),
-				Email:      &p.Email,
-				FullName:   &p.FullName,
-				Role:       &p.Role,
+				Email:      p.Email,
+				FullName:   p.FullName,
+				Role:       p.Role,
 				CreateTime: p.CreateTime,
 				UpdateTime: p.UpdateTime,
 			},

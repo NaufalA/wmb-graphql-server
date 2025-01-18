@@ -6,18 +6,15 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/extension"
-	"github.com/99designs/gqlgen/graphql/handler/lru"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/NaufalA/wmb-graphql-server/api/controller"
+	"github.com/NaufalA/wmb-graphql-server/api/middleware"
 	"github.com/NaufalA/wmb-graphql-server/config"
-	"github.com/NaufalA/wmb-graphql-server/graph"
 	"github.com/NaufalA/wmb-graphql-server/graph/resolver"
 	"github.com/NaufalA/wmb-graphql-server/internal/database"
 	"github.com/NaufalA/wmb-graphql-server/internal/repository"
+	"github.com/NaufalA/wmb-graphql-server/internal/service"
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"github.com/vektah/gqlparser/v2/ast"
 )
 
 const defaultPort = "8080"
@@ -52,27 +49,27 @@ func main() {
 	productRepository := repository.NewProductRepository(logger, mongoClient.Database(mongoConfig.Database))
 	userRepository := repository.NewUserRepository(logger, mongoClient.Database(mongoConfig.Database))
 
-	srv := handler.New(graph.NewExecutableSchema(graph.Config{
-		Resolvers: resolver.NewResolver(
+	authService := service.NewAuthService(logger, userRepository)
+	authController := controller.NewAuthController(logger, authService)
+
+	r := gin.Default()
+
+	auth := r.Group("/auth")
+	{
+		auth.POST("/login", authController.Login)
+		auth.POST("/register", authController.Register)
+		auth.POST("/resetPassword", authController.ResetPassword)
+	}
+	query := r.Group("/query")
+	{
+		query.Use(middleware.AuthTokenMiddleware())
+		query.POST("", controller.GraphqlHandler(resolver.NewResolver(
 			productRepository,
 			userRepository,
-		),
-	}))
+		)))
+	}
+	r.GET("/playground", controller.PlaygroundHandler())
 
-	srv.AddTransport(transport.Options{})
-	srv.AddTransport(transport.GET{})
-	srv.AddTransport(transport.POST{})
-
-	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
-
-	srv.Use(extension.Introspection{})
-	srv.Use(extension.AutomaticPersistedQuery{
-		Cache: lru.New[string](100),
-	})
-
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
-
-	logger.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	logger.Fatal(http.ListenAndServe(":"+port, nil))
+	logger.Printf("server listening at http://localhost:%s", port)
+	logger.Fatal(http.ListenAndServe(":"+port, r))
 }
