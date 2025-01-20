@@ -10,6 +10,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: D1fficultPAssw0rd
     ports:
       - 27017:27017
+    volumes:
+      - wmb-mongo-data:/data/db
 
   mongo-express:
     image: mongo-express
@@ -21,3 +23,6 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: D1fficultPAssw0rd
       ME_CONFIG_MONGODB_URL: mongodb://root:D1fficultPAssw0rd@mongo:27017/
       ME_CONFIG_BASICAUTH: false
+
+volumes:
+  wmb-mongo-data:
