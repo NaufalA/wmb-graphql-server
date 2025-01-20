@@ -17,7 +17,7 @@ type ProductRepository interface {
 	UpdateProduct(ctx context.Context, input model.UpdateProductInput) (*model.Product, error)
 	DeleteProduct(ctx context.Context, id string) (*string, error)
 	GetProduct(ctx context.Context, id string) (*model.Product, error)
-	ListProducts(ctx context.Context, input model.ProductConnectionArgs) (*model.ProductConnection, error)
+	ListProducts(ctx context.Context, input dto.ConnectionRequest) (*model.ProductConnection, error)
 }
 
 type UserRepository interface {
@@ -25,12 +25,12 @@ type UserRepository interface {
 	UpdateUser(ctx context.Context, input collection.User) (*collection.User, error)
 	DeleteUser(ctx context.Context, id string) (*string, error)
 	GetUser(ctx context.Context, request dto.GetUserRequest) (*collection.User, error)
-	ListUsers(ctx context.Context, input model.UserConnectionArgs) (*model.UserConnection, error)
+	ListUsers(ctx context.Context, input dto.ConnectionRequest) (*model.UserConnection, error)
 }
 
 type Resolver struct {
 	productRepository ProductRepository
-	userRepository UserRepository
+	userRepository    UserRepository
 }
 
 func NewResolver(
@@ -39,6 +39,6 @@ func NewResolver(
 ) *Resolver {
 	return &Resolver{
 		productRepository: productRepository,
-		userRepository: userRepository,
+		userRepository:    userRepository,
 	}
 }

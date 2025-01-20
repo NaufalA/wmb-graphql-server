@@ -23,10 +23,10 @@ type Mutation struct {
 }
 
 type PageInfo struct {
-	HasPrevPage bool    `json:"hasPrevPage"`
-	HasNextPage bool    `json:"hasNextPage"`
-	StartCursor *string `json:"startCursor,omitempty"`
-	EndCursor   *string `json:"endCursor,omitempty"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	HasNextPage     bool    `json:"hasNextPage"`
+	StartCursor     *string `json:"startCursor,omitempty"`
+	EndCursor       *string `json:"endCursor,omitempty"`
 }
 
 type Product struct {
@@ -42,16 +42,6 @@ type Product struct {
 type ProductConnection struct {
 	Edges    []*ProductEdge `json:"edges"`
 	PageInfo *PageInfo      `json:"pageInfo"`
-}
-
-type ProductConnectionArgs struct {
-	First    *int32  `json:"first,omitempty"`
-	Last     *int32  `json:"last,omitempty"`
-	Before   *string `json:"before,omitempty"`
-	After    *string `json:"after,omitempty"`
-	Email    *string `json:"email,omitempty"`
-	FullName *string `json:"fullName,omitempty"`
-	Role     *string `json:"role,omitempty"`
 }
 
 type ProductEdge struct {
@@ -89,16 +79,6 @@ type User struct {
 type UserConnection struct {
 	Edges    []*UserEdge `json:"edges"`
 	PageInfo *PageInfo   `json:"pageInfo"`
-}
-
-type UserConnectionArgs struct {
-	First    *int32  `json:"first,omitempty"`
-	Last     *int32  `json:"last,omitempty"`
-	Before   *string `json:"before,omitempty"`
-	After    *string `json:"after,omitempty"`
-	Email    *string `json:"email,omitempty"`
-	FullName *string `json:"fullName,omitempty"`
-	Role     *string `json:"role,omitempty"`
 }
 
 type UserEdge struct {

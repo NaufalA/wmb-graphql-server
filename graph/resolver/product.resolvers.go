@@ -9,6 +9,7 @@ import (
 
 	"github.com/NaufalA/wmb-graphql-server/graph"
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
+	"github.com/NaufalA/wmb-graphql-server/internal/dto"
 )
 
 // CreateProduct is the resolver for the createProduct field.
@@ -32,8 +33,16 @@ func (r *queryResolver) GetProduct(ctx context.Context, id string) (*model.Produ
 }
 
 // ListProducts is the resolver for the listProducts field.
-func (r *queryResolver) ListProducts(ctx context.Context, input model.ProductConnectionArgs) (*model.ProductConnection, error) {
-	return r.productRepository.ListProducts(ctx, input)
+func (r *queryResolver) ListProducts(
+	ctx context.Context, first *int32, after *string, last *int32, before *string, search *string,
+) (*model.ProductConnection, error) {
+	return r.productRepository.ListProducts(ctx, dto.ConnectionRequest{
+		First:  first,
+		After:  after,
+		Last:   last,
+		Before: before,
+		Search: search,
+	})
 }
 
 // Mutation returns graph.MutationResolver implementation.

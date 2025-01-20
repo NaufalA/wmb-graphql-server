@@ -151,7 +151,7 @@ func (r *UserRepository) GetUser(ctx context.Context, request dto.GetUserRequest
 	return &col, nil
 }
 
-func (r *UserRepository) ListUsers(ctx context.Context, input model.UserConnectionArgs) (*model.UserConnection, error) {
+func (r *UserRepository) ListUsers(ctx context.Context, input dto.ConnectionRequest) (*model.UserConnection, error) {
 	paginationUtil := util.PaginationUtil{}
 	filter := bson.M{}
 	var opts *options.FindOptionsBuilder
@@ -249,7 +249,7 @@ func (r *UserRepository) ListUsers(ctx context.Context, input model.UserConnecti
 			logrus.Error(err)
 			return nil, err
 		}
-		result.PageInfo.HasNextPage = prevCount > 0
+		result.PageInfo.HasPreviousPage = prevCount > 0
 	}
 
 	return result, nil

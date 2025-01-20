@@ -7,18 +7,6 @@ type User {
   updateTime: Time
 }
 
-input UserConnectionArgs {
-  # pagination
-  first: Int
-  last: Int
-  before: String
-  after: String
-  # filters
-  email: String
-  fullName: String
-  role: String
-}
-
 type UserEdge {
   cursor: ID!
   node: User
@@ -31,7 +19,13 @@ type UserConnection {
 
 extend type Query {
   getUser(id: ID!): User
-  listUsers(input: UserConnectionArgs!): UserConnection!
+  listUsers(
+    first: Int,
+    after: String,
+    last: Int,
+    before: String,
+    search: String,
+): UserConnection!
 }
 
 input CreateUserInput {

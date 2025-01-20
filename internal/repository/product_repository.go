@@ -7,6 +7,7 @@ import (
 
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
 	"github.com/NaufalA/wmb-graphql-server/internal/collection"
+	"github.com/NaufalA/wmb-graphql-server/internal/dto"
 	"github.com/NaufalA/wmb-graphql-server/pkg/util"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -167,7 +168,7 @@ func (r *ProductRepository) GetProduct(ctx context.Context, id string) (*model.P
 	}, nil
 }
 
-func (r *ProductRepository) ListProducts(ctx context.Context, input model.ProductConnectionArgs) (*model.ProductConnection, error) {
+func (r *ProductRepository) ListProducts(ctx context.Context, input dto.ConnectionRequest) (*model.ProductConnection, error) {
 	paginationUtil := util.PaginationUtil{}
 	filter := bson.M{}
 	var opts *options.FindOptionsBuilder
@@ -266,7 +267,7 @@ func (r *ProductRepository) ListProducts(ctx context.Context, input model.Produc
 			logrus.Error(err)
 			return nil, err
 		}
-		result.PageInfo.HasNextPage = prevCount > 0
+		result.PageInfo.HasPreviousPage = prevCount > 0
 	}
 
 	return result, nil

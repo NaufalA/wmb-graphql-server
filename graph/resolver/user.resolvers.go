@@ -78,6 +78,14 @@ func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, er
 }
 
 // ListUsers is the resolver for the listUsers field.
-func (r *queryResolver) ListUsers(ctx context.Context, input model.UserConnectionArgs) (*model.UserConnection, error) {
-	return r.userRepository.ListUsers(ctx, input)
+func (r *queryResolver) ListUsers(
+	ctx context.Context, first *int32, after *string, last *int32, before *string, search *string,
+) (*model.UserConnection, error) {
+	return r.userRepository.ListUsers(ctx, dto.ConnectionRequest{
+		First:  first,
+		After:  after,
+		Last:   last,
+		Before: before,
+		Search: search,
+	})
 }
