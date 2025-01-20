@@ -13,11 +13,20 @@ func AuthTokenMiddleware() gin.HandlerFunc  {
 	return func(ctx *gin.Context) {
 	authorization := ctx.Request.Header.Get("Authorization")
 		if authorization == "" {
-			status := http.StatusUnauthorized
-			ctx.AbortWithStatusJSON(status, dto.ErrorResponse{
-				Status: status,
+			errorResponse := dto.ErrorResponse{
+				Status: http.StatusUnauthorized,
 				Message: "unauthorized. please login",
-			})
+			}
+			ctx.AbortWithStatusJSON(errorResponse.Status, errorResponse)
+			return
+		}
+		authorizationSplit := strings.Split(authorization, " ")
+		if len(authorizationSplit) < 2 {
+			errorResponse := dto.ErrorResponse{
+				Status: http.StatusUnauthorized,
+				Message: "invalid token",
+			}
+			ctx.AbortWithStatusJSON(errorResponse.Status, errorResponse)
 			return
 		}
 		tokenString := strings.Split(authorization, " ")[1]
