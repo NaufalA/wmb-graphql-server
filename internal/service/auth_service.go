@@ -119,19 +119,9 @@ func (s *AuthService) ResetPassword(ctx context.Context, request dto.ResetPasswo
 		return nil, errorResponse
 	}
 
-	passwordUtil := util.PasswordUtil{}
 	newPassword := bson.NewObjectID().Hex()
-	newPasswordHash, err := passwordUtil.HashPassword(newPassword)
-	if err != nil {
-		errorResponse := dto.ErrorResponse{
-			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
-		}
-		s.logger.Error(errorResponse.Message)
-		return nil, errorResponse
-	}
-	user.PasswordHash = &newPasswordHash
-	_, err = s.userRepository.UpdateUser(ctx, *user)
+	user.Password = &newPassword
+	_, err := s.userRepository.UpdateUser(ctx, *user)
 	if err != nil {
 		errorResponse := dto.ErrorResponse{
 			Status:  http.StatusInternalServerError,
