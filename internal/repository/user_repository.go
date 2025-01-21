@@ -34,6 +34,14 @@ func NewUserRepository(
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, input model.CreateUserInput) (*collection.User, error) {
+	exist, _ := r.GetUser(ctx, dto.GetUserRequest{
+		Email: input.Email,
+	})
+	if exist != nil {
+		err := fmt.Errorf("user with email %s already exist", input.Email)
+		logrus.Error(err)
+		return nil, err
+	}
 	id := primitive.ObjectID(bson.NewObjectID())
 	now := time.Now()
 	passwordUtil := util.PasswordUtil{}
