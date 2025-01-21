@@ -14,9 +14,8 @@ import (
 
 type JWTUtil struct {}
 
-var secret = []byte(os.Getenv("JWT_SECRET_KEY")) 
-
 func (j *JWTUtil) GetToken(ctx context.Context, claims map[string]interface{}) (*string, error) {
+	var secret = []byte(os.Getenv("JWT_SECRET_KEY")) 
 	builder := jwt.NewBuilder().
 		IssuedAt(time.Now()).
 		Expiration(time.Now().Add(12*time.Hour))
@@ -45,6 +44,7 @@ func (j *JWTUtil) GetToken(ctx context.Context, claims map[string]interface{}) (
 }
 
 func (j *JWTUtil) ValidateToken(ctx context.Context, tokenString string) (jwt.Token, error) {
+	var secret = []byte(os.Getenv("JWT_SECRET_KEY")) 
 	token, err := jwt.ParseString(tokenString, jwt.WithKey(jwa.HS256, secret))
   if err != nil {
     return nil, dto.ErrorResponse{
