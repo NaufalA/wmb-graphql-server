@@ -174,7 +174,7 @@ func (r *UserRepository) ListUsers(ctx context.Context, input dto.ConnectionRequ
 		opts = options.Find().SetLimit(int64(*input.First)).SetSort(bson.M{"createTime": direction})
 		if input.After != nil {
 			paginationCursor, _ := paginationUtil.DecodeCursor(*input.After)
-			createtime, _ := time.Parse(time.RFC3339, paginationCursor)
+			createtime, _ := time.Parse(time.RFC3339Nano, paginationCursor)
 			filter["createTime"] = bson.M{"$gt": createtime}
 		}
 	} else if input.Last != nil {
@@ -188,7 +188,8 @@ func (r *UserRepository) ListUsers(ctx context.Context, input dto.ConnectionRequ
 		opts = options.Find().SetLimit(int64(*input.Last)).SetSort(bson.M{"createTime": direction})
 		if input.Before != nil {
 			paginationCursor, _ := paginationUtil.DecodeCursor(*input.After)
-			filter["createTime"] = bson.M{"$lt": paginationCursor}
+			createtime, _ := time.Parse(time.RFC3339Nano, paginationCursor)
+			filter["createTime"] = bson.M{"$lt": createtime}
 		}
 	}
 
@@ -216,7 +217,7 @@ func (r *UserRepository) ListUsers(ctx context.Context, input dto.ConnectionRequ
 	}
 	for _, p := range users {
 		edge := model.UserEdge{
-			Cursor: paginationUtil.EncodeCursor(p.CreateTime.Format(time.RFC3339)),
+			Cursor: paginationUtil.EncodeCursor(p.CreateTime.Format(time.RFC3339Nano)),
 			Node: &model.User{
 				ID:         p.ID.Hex(),
 				Email:      p.Email,

@@ -183,7 +183,7 @@ func (r *ProductRepository) ListProducts(ctx context.Context, input dto.Connecti
 		opts = options.Find().SetLimit(int64(*input.First)).SetSort(bson.M{"createTime": direction})
 		if input.After != nil {
 			paginationCursor, _ := paginationUtil.DecodeCursor(*input.After)
-			createtime, _ := time.Parse(time.RFC3339, paginationCursor)
+			createtime, _ := time.Parse(time.RFC3339Nano, paginationCursor)
 			filter["createTime"] = bson.M{"$gt": createtime}
 		}
 	} else if input.Last != nil {
@@ -197,7 +197,8 @@ func (r *ProductRepository) ListProducts(ctx context.Context, input dto.Connecti
 		opts = options.Find().SetLimit(int64(*input.Last)).SetSort(bson.M{"createTime": direction})
 		if input.Before != nil {
 			paginationCursor, _ := paginationUtil.DecodeCursor(*input.After)
-			filter["createTime"] = bson.M{"$lt": paginationCursor}
+			createtime, _ := time.Parse(time.RFC3339Nano, paginationCursor)
+			filter["createTime"] = bson.M{"$lt": createtime}
 		}
 	}
 
@@ -225,7 +226,7 @@ func (r *ProductRepository) ListProducts(ctx context.Context, input dto.Connecti
 	}
 	for _, p := range products {
 		edge := model.ProductEdge{
-			Cursor: paginationUtil.EncodeCursor(p.CreateTime.Format(time.RFC3339)),
+			Cursor: paginationUtil.EncodeCursor(p.CreateTime.Format(time.RFC3339Nano)),
 			Node: &model.Product{
 				ID:          p.ID.Hex(),
 				ProductName: p.ProductName,
