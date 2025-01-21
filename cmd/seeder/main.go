@@ -3,15 +3,20 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
+	"time"
 
 	"github.com/NaufalA/wmb-graphql-server/config"
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
+	"github.com/NaufalA/wmb-graphql-server/internal/collection"
 	"github.com/NaufalA/wmb-graphql-server/internal/database"
 	"github.com/NaufalA/wmb-graphql-server/internal/repository"
+	"github.com/NaufalA/wmb-graphql-server/pkg/util"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -52,13 +57,12 @@ func main() {
 	}
 
 	productRepository := repository.NewProductRepository(logger, mongoClient.Database(mongoConfig.Database))
-	userRepository := repository.NewUserRepository(logger, mongoClient.Database(mongoConfig.Database))
 
 	ctx := context.Background()
 	newUsers := []model.CreateUserInput{
 		{
 			Email:    "superadmin@wmb.com",
-			FullName: "Super Admin",
+			FullName: "SuperAdmin",
 			Password: bson.NewObjectID().Hex(),
 		},
 		{
@@ -73,13 +77,38 @@ func main() {
 		},
 	}
 	for _, u := range newUsers {
-		createdUser, err := userRepository.CreateUser(ctx, u)
+	user := collection.User{}
+	filter := bson.M{"email": u.Email}
+	err := mongoClient.Database(mongoConfig.Database).Collection(user.CollectionName()).FindOne(ctx, filter).Decode(&user)
+	if user.Email != nil {
+		logrus.Error(err)
+		continue;
+	}
+	id := primitive.ObjectID(bson.NewObjectID())
+	now := time.Now()
+	passwordUtil := util.PasswordUtil{}
+	passwordHash, err := passwordUtil.HashPassword(u.Password)
+	if err != nil {
+		logrus.Error(err)
+	}
+	col := collection.User{
+		ID:           id,
+		Email:        &u.Email,
+		FullName:     &u.FullName,
+		Role:         &u.FullName,
+		PasswordHash: &passwordHash,
+		CreateTime:   &now,
+	}
+	_, err = mongoClient.Database(mongoConfig.Database).Collection(col.CollectionName()).InsertOne(ctx, col)
+	if err != nil {
+		logrus.Error(err)
+	}
 		if err != nil {
 			logrus.Errorf("failed create user: %s", err.Error())
 		} else {
 			logrus.Infof(
 				"success create user with credentials: email: %s password: %s",
-				*createdUser.Email,
+				u.Email,
 				u.Password,
 			)
 		}
@@ -117,8 +146,8 @@ func main() {
 
 	for _, p := range productNames {
 		productName := p
-		price := rand.Float64() * 10000
-		stock := rand.Float64() * 100
+		price := math.Ceil(rand.Float64() * 100000)
+		stock := math.Floor(rand.Float64() * 100)
 		stockUnit := units[rand.Intn(4)]
 
 		productRepository.CreateProduct(ctx, model.CreateProductInput{
@@ -127,6 +156,7 @@ func main() {
 			Stock:       stock,
 			StockUnit:   stockUnit,
 		})
+		time.Sleep(2 * time.Second)
 	}
 
 	logrus.Info("seeding complete")
