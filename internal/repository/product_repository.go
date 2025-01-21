@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
@@ -25,12 +26,32 @@ func NewProductRepository(
 	logger *logrus.Logger,
 	db *mongo.Database,
 ) *ProductRepository {
-	return &ProductRepository{
+	r := ProductRepository{
 		logger: logger.WithFields(logrus.Fields{
 			"location": "ProductRepository",
 		}),
 		db: db,
 	}
+	ctx := context.Background()
+	go func() {
+		collections, _ := db.ListCollectionNames(ctx, bson.D{})
+		productCollectionName := collection.Product{}.CollectionName()
+		if !slices.Contains(collections, productCollectionName) {
+			db.CreateCollection(ctx, productCollectionName)
+			r.logger.Info("Created product collection")
+		}
+		productIndexModel := mongo.IndexModel{
+			Options: options.Index().SetName("search"),
+			Keys:    bson.D{{Key: "productName", Value: "text"}},
+		}
+		_, err := db.Collection(productCollectionName).Indexes().CreateOne(ctx, productIndexModel)
+		if err != nil {
+			r.logger.Errorf("Created product search index failed: %s", err.Error())
+		} else {
+			r.logger.Info("Created product search index")
+		}
+	}()
+	return &r
 }
 
 func (r *ProductRepository) CreateProduct(ctx context.Context, input model.CreateProductInput) (*model.Product, error) {
@@ -46,7 +67,7 @@ func (r *ProductRepository) CreateProduct(ctx context.Context, input model.Creat
 	}
 	_, err := r.db.Collection(col.CollectionName()).InsertOne(ctx, col)
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 
@@ -65,7 +86,7 @@ func (r *ProductRepository) CreateProduct(ctx context.Context, input model.Creat
 func (r *ProductRepository) UpdateProduct(ctx context.Context, input model.UpdateProductInput) (*model.Product, error) {
 	id, err := primitive.ObjectIDFromHex(input.ID)
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 	product := collection.Product{
@@ -74,7 +95,7 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, input model.Updat
 	filter := bson.M{"_id": product.ID}
 	err = r.db.Collection(product.CollectionName()).FindOne(ctx, filter).Decode(&product)
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 	now := time.Now()
@@ -96,11 +117,11 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, input model.Updat
 	collectionName := collection.Product{}.CollectionName()
 	result, err := r.db.Collection(collectionName).UpdateOne(ctx, filter, update)
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 	if result.ModifiedCount == 0 {
-		logrus.Error("no data modified")
+		r.logger.Error("no data modified")
 		return nil, err
 	}
 
@@ -120,7 +141,7 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, input model.Updat
 func (r *ProductRepository) DeleteProduct(ctx context.Context, id string) (*string, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 	col := collection.Product{
@@ -130,11 +151,11 @@ func (r *ProductRepository) DeleteProduct(ctx context.Context, id string) (*stri
 	filter := bson.M{"_id": col.ID}
 	result, err := r.db.Collection(col.CollectionName()).DeleteOne(ctx, filter)
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 	if result.DeletedCount == 0 {
-		logrus.Error("no data deleted")
+		r.logger.Error("no data deleted")
 		return nil, err
 	}
 
@@ -144,7 +165,7 @@ func (r *ProductRepository) DeleteProduct(ctx context.Context, id string) (*stri
 func (r *ProductRepository) GetProduct(ctx context.Context, id string) (*model.Product, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 	col := collection.Product{
@@ -153,7 +174,7 @@ func (r *ProductRepository) GetProduct(ctx context.Context, id string) (*model.P
 	filter := bson.M{"_id": col.ID}
 	err = r.db.Collection(col.CollectionName()).FindOne(ctx, filter).Decode(&col)
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 
@@ -171,12 +192,17 @@ func (r *ProductRepository) GetProduct(ctx context.Context, id string) (*model.P
 func (r *ProductRepository) ListProducts(ctx context.Context, input dto.ConnectionRequest) (*model.ProductConnection, error) {
 	paginationUtil := util.PaginationUtil{}
 	filter := bson.M{}
+
+	if input.Search != nil && *input.Search != "" {
+		filter["$text"] = bson.M{"$search": input.Search}
+	}
+
 	var opts *options.FindOptionsBuilder
 	direction := 1
 	if input.First != nil {
 		if *input.First < 0 {
 			err := fmt.Errorf("invalid parameter, first cannot be negative")
-			logrus.Error(err)
+			r.logger.Error(err)
 			return nil, err
 		}
 		// Forward Pagination
@@ -189,7 +215,7 @@ func (r *ProductRepository) ListProducts(ctx context.Context, input dto.Connecti
 	} else if input.Last != nil {
 		if *input.Last < 0 {
 			err := fmt.Errorf("invalid parameter, last cannot be negative")
-			logrus.Error(err)
+			r.logger.Error(err)
 			return nil, err
 		}
 		// Backward Pagination
@@ -210,14 +236,14 @@ func (r *ProductRepository) ListProducts(ctx context.Context, input dto.Connecti
 		}
 	}()
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 
 	products := []collection.Product{}
 	err = cursor.All(ctx, &products)
 	if err != nil {
-		logrus.Error(err)
+		r.logger.Error(err)
 		return nil, err
 	}
 	result := &model.ProductConnection{
@@ -255,7 +281,7 @@ func (r *ProductRepository) ListProducts(ctx context.Context, input dto.Connecti
 			countOpts,
 		)
 		if err != nil {
-			logrus.Error(err)
+			r.logger.Error(err)
 			return nil, err
 		}
 		result.PageInfo.HasNextPage = nextCount > 0
@@ -265,7 +291,7 @@ func (r *ProductRepository) ListProducts(ctx context.Context, input dto.Connecti
 			countOpts,
 		)
 		if err != nil {
-			logrus.Error(err)
+			r.logger.Error(err)
 			return nil, err
 		}
 		result.PageInfo.HasPreviousPage = prevCount > 0

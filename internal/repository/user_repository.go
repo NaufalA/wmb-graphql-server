@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/NaufalA/wmb-graphql-server/graph/model"
@@ -25,12 +26,32 @@ func NewUserRepository(
 	logger *logrus.Logger,
 	db *mongo.Database,
 ) *UserRepository {
-	return &UserRepository{
+	r := UserRepository{
 		logger: logger.WithFields(logrus.Fields{
 			"location": "UserRepository",
 		}),
 		db: db,
 	}
+	ctx := context.Background()
+	go func() {
+		collections, _ := db.ListCollectionNames(ctx, bson.D{})
+		userCollectionName := collection.User{}.CollectionName()
+		if !slices.Contains(collections, userCollectionName) {
+			db.CreateCollection(ctx, userCollectionName)
+			logrus.Info("Created user collection")
+		}
+		userIndexModel := mongo.IndexModel{
+			Options: options.Index().SetName("search"),
+			Keys:    bson.D{{Key: "email", Value: "text"}, {Key: "fullName", Value: "text"}},
+		}
+		_, err := db.Collection(userCollectionName).Indexes().CreateOne(ctx, userIndexModel)
+		if err != nil {
+			r.logger.Errorf("Created user search index failed: %s", err.Error())
+		} else {
+			r.logger.Info("Created user search index")
+		}
+	}()
+	return &r
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, input model.CreateUserInput) (*collection.User, error) {
@@ -162,6 +183,11 @@ func (r *UserRepository) GetUser(ctx context.Context, request dto.GetUserRequest
 func (r *UserRepository) ListUsers(ctx context.Context, input dto.ConnectionRequest) (*model.UserConnection, error) {
 	paginationUtil := util.PaginationUtil{}
 	filter := bson.M{}
+
+	if input.Search != nil && *input.Search != "" {
+		filter["$text"] = bson.M{"$search": input.Search}
+	}
+
 	var opts *options.FindOptionsBuilder
 	direction := 1
 	if input.First != nil {
