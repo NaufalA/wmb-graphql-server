@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/NaufalA/wmb-graphql-server/internal/dto"
@@ -13,7 +14,7 @@ import (
 
 type JWTUtil struct {}
 
-var secret = []byte("your_secret_key") 
+var secret = []byte(os.Getenv("JWT_SECRET_KEY")) 
 
 func (j *JWTUtil) GetToken(ctx context.Context, claims map[string]interface{}) (*string, error) {
 	builder := jwt.NewBuilder().

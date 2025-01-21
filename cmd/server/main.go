@@ -14,20 +14,28 @@ import (
 	"github.com/NaufalA/wmb-graphql-server/internal/repository"
 	"github.com/NaufalA/wmb-graphql-server/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
 const defaultPort = "8080"
 
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		logrus.Error("error loading .env file ")
+	}
+}
+
 func main() {
 	logger := logrus.New()
 
 	mongoConfig := config.MongoDBConfig{
-		Host:     "localhost",
-		Port:     ":27017",
-		Username: "root",
-		Password: "D1fficultPAssw0rd",
-		Database: "wmb",
+		Host:     os.Getenv("MONGODB_HOST"),
+		Port:     os.Getenv("MONGODB_PORT"),
+		Username: os.Getenv("MONGODB_USERNAME"),
+		Password: os.Getenv("MONGODB_PASSWORD"),
+		Database: os.Getenv("MONGODB_DATABASE"),
 	}
 	mongoClient, err := database.ConnectMongo(mongoConfig)
 	if err != nil {
@@ -41,7 +49,7 @@ func main() {
 			logger.Panic(err)
 		}
 	}()
-	port := os.Getenv("PORT")
+	port := os.Getenv("SERVER_PORT")
 	if port == "" {
 		port = defaultPort
 	}
